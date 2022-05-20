@@ -22,9 +22,7 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
      - uses: actions/checkout@master 
-     - uses: actions/setup-node@master  
-       with: 
-          node-version: '10.x' 
+     - uses: actions/setup-node@master 
 
       # Runs a single command using the runners shell
      - name: Install dependencies
