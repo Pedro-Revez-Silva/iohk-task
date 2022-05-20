@@ -2,48 +2,33 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import deepEqualInAnyOrder from 'deep-equal-in-any-order';
 
+import endpoints from '../fixtures/endpoints';
+import metadata from '../fixtures/metadata';
+import wrongMetadata from '../fixtures/wrongMetadata';
+import wrongProperty from '../fixtures/wrongProperty';
+import metadataListOfProperties from '../fixtures/metadataListOfProperties';
+
+
+
 chai.use(chaiHttp);
 chai.use(deepEqualInAnyOrder);
 
 const expect = chai.expect;
 const should = chai.should();
 
-const baseUrl: string = 'https://metadata-server-mock.herokuapp.com';
-const endpoints = {
-    base: '/',
-    query: '/query',
-    properties: '/properties/',
-    metadata: '/metadata/',
-}
 
-const metadata: Array<string> = [
-    '2048c7e09308f9138cef8f1a81733b72e601d016eea5eef759ff2933416d617a696e67436f696e',
-    '919e8a1922aaa764b1d66407c6f62244e77081215f385b60a62091494861707079436f696e',
-];
-
-const wrongMetadata: string = '919e8a1922aaa764b1d66407c6f62f1a81733b72e601d016eea5eef759ff29d617a696e67436f696e';
-const wrongProperty: string = 'wrongProperty';
-
-const metadataListOfProperties: Array<string> = [
-    'subject',
-    'url',
-    'name',
-    'ticker',
-    'decimals',
-    'policy',
-    'logo',
-    'description'
-];
 
 let savedMetadata: any;
 let savedMetadataKeys: any;
+
 describe('Test metadata mock service', () => {
 
 
     before((done) => {
+        //this.timeout(10000); // This should be enough time to load the mock service, disabled because of TS compilation errors.
         console.log('Before tests start, touch service to start it');
-        chai.request(baseUrl)
-            .get(endpoints.base)
+        chai.request(endpoints.baseUrl)
+            .get(endpoints.home)
             .end((err, res) => {
                 console.log('Service started');
                 done();
@@ -51,31 +36,50 @@ describe('Test metadata mock service', () => {
     });
 
     it('Service is Up', (done) => {
-        chai.request(baseUrl)
-            .get(endpoints.base)
+        chai.request(endpoints.baseUrl)
+            .get(endpoints.home)
             .end((err, res) => {
                 expect(res).to.have.status(200);
                 done();
             });
     });
 
-    // This endpoint doesn't seem to be working.
-    it.skip('Query endpoint', (done) => {
-        chai.request(baseUrl)
+    it('Query endpoint - subjects exist', (done) => {
+        let property = metadataListOfProperties[0] + 's';
+        const body: { [k: string]: any } = {};
+        body[property] = [metadata[0]];
+
+
+        chai.request(endpoints.baseUrl)
             .post(endpoints.query)
-            .query({
+            .send(body)
+            .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body).to.have.property(metadataListOfProperties[0] + 's');
+                expect(res.body.subjects).to.be.an('array');
+                expect(res.body.subjects).to.have.lengthOf(1);
+                done();
+            });
+    });
+
+    it('Query endpoint - no subjects exist', (done) => {
+        chai.request(endpoints.baseUrl)
+            .post(endpoints.query)
+            .send({
                 "subjects": ["789ef8ae89617f34c07f7f6a12e4d65146f958c0bc15a97b4ff169f16861707079636f696e",
                     "789ef8ae89617f34c07f7f6a12e4d65146f958c0bc15a97b4ff169f1"]
             })
             .end((err, res) => {
-                console.log(res.body);
                 expect(res).to.have.status(200);
+                expect(res.body).to.have.property(metadataListOfProperties[0] + 's');
+                expect(res.body.subjects).to.be.an('array');
+                expect(res.body.subjects).to.have.lengthOf(0);
                 done();
             });
     });
 
-    it('Get metadata', (done) => {
-        chai.request(baseUrl)
+    it('Get metadata - Contains all properties', (done) => {
+        chai.request(endpoints.baseUrl)
             .get(endpoints.metadata + metadata[0])
             .end((err, res) => {
 
@@ -86,23 +90,17 @@ describe('Test metadata mock service', () => {
 
                 savedMetadata = res.body;
                 savedMetadataKeys = Object.keys(savedMetadata);
-                console.log('Name on METADATA:')
-                console.log(savedMetadata[savedMetadataKeys[2]]);
-
-                console.log(savedMetadataKeys);
 
                 done();
             });
     });
 
     it('Properties endpoint', (done) => {
-        chai.request(baseUrl)
+        chai.request(endpoints.baseUrl)
             .get(endpoints.metadata + metadata[0] + endpoints.properties + savedMetadataKeys[2])
             .end((err, res) => {
-                console.log(res.body);
+
                 expect(res).to.have.status(200);
-                console.log('Name on PROPERTIES:')
-                console.log(savedMetadata[savedMetadataKeys[2]]);
                 expect(res.body).to.deep.equalInAnyOrder(savedMetadata[savedMetadataKeys[2]]);
                 done();
             });
@@ -110,7 +108,7 @@ describe('Test metadata mock service', () => {
 
     it('Wrong metadata', (done) => {
         // Error should responde with a regular 404 request with a json body
-        chai.request(baseUrl)
+        chai.request(endpoints.baseUrl)
             .get(endpoints.metadata + wrongMetadata)
             .end((err, res) => {
                 expect(err).to.have.status(200);
@@ -123,7 +121,7 @@ describe('Test metadata mock service', () => {
 
     it('Wrong properties', (done) => {
         // Error should responde with a regular 404 request with a json body
-        chai.request(baseUrl)
+        chai.request(endpoints.baseUrl)
             .get(endpoints.metadata + metadata[0] + endpoints.properties + wrongProperty)
             .end((err, res) => {
                 expect(err).to.have.status(200);
@@ -134,7 +132,7 @@ describe('Test metadata mock service', () => {
             });
     });
 
-    
+
 
 
 });

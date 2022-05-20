@@ -1,0 +1,3 @@
+const wrongMetadata: string = '919e8a1922aaa764b1d66407c6f62f1a81733b72e601d016eea5eef759ff29d617a696e67436f696e';
+
+export default wrongMetadata;
