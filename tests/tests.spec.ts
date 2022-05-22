@@ -95,7 +95,7 @@ describe('Test metadata mock service', () => {
             });
     });
 
-    it('Properties endpoint', (done) => {
+    it('Properties endpoint - Get a property', (done) => {
         chai.request(endpoints.baseUrl)
             .get(endpoints.metadata + metadata[0] + endpoints.properties + savedMetadataKeys[2])
             .end((err, res) => {
